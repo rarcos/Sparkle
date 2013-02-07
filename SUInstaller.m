@@ -9,6 +9,7 @@
 #import "SUInstaller.h"
 #import "SUPlainInstaller.h"
 #import "SUPackageInstaller.h"
+#import "SUSilentPackageInstaller.h"
 #import "SUHost.h"
 #import "SUConstants.h"
 #import "SULog.h"
@@ -128,7 +129,7 @@ static NSString*	sUpdateFolder = nil;
 	}
 	else
 	{
-		[(isPackage ? [SUPackageInstaller class] : [SUPlainInstaller class]) performInstallationToPath:installationPath fromPath:newAppDownloadPath host:host delegate:delegate synchronously:synchronously versionComparator:comparator];
+		[(isPackage ? [SUSilentPackageInstaller class] : [SUPlainInstaller class]) performInstallationToPath:installationPath fromPath:newAppDownloadPath host:host delegate:delegate synchronously:synchronously versionComparator:comparator];
 	}
 }
 
