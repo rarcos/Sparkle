@@ -9,6 +9,7 @@
 #import "SUSilentPackageInstaller.h"
 #import <Cocoa/Cocoa.h>
 #import "SUConstants.h"
+#import "SULog.h"
 
 NSString *SUSilentPackageInstallerHostKey = @"SUSilentPackageInstallerHost";
 NSString *SUSilentPackageInstallerDelegateKey = @"SUSilentPackageInstallerDelegate";
@@ -28,14 +29,15 @@ NSString *SUSilentPackageInstallerScriptKey = @"SUSilentPackageInstallerScript";
 
 	NSAppleScript *installerScript = [[NSAppleScript alloc] initWithSource:[info objectForKey:SUSilentPackageInstallerScriptKey]];
 	NSDictionary *installerError;
-	[installerScript executeAndReturnError:&installerError];
+	NSAppleEventDescriptor *returnDescriptor = [installerScript executeAndReturnError:&installerError];
 
-	if (installerError) {
-		NSError *error = [NSError errorWithDomain:SUSparkleErrorDomain code:SUInstallationError userInfo:[NSDictionary dictionaryWithObject:SULocalizedString(@"An error occurred while installing the update. Please try again later.", nil) forKey:NSLocalizedDescriptionKey]];
-		[self finishInstallationToPath:[info objectForKey:SUSilentPackageInstallerInstallationPathKey] withResult:NO host:[info objectForKey:SUSilentPackageInstallerHostKey] error:error delegate:[info objectForKey:SUSilentPackageInstallerDelegateKey]];
-	} else {
+	if (returnDescriptor.descriptorType) {
 		// Known bug: if the installation fails or is canceled, Sparkle goes ahead and restarts, thinking everything is fine.
 		[self performSelectorOnMainThread:@selector(finishInstallationWithInfo:) withObject:info waitUntilDone:NO];
+	} else {
+		SULog(@"Error running AppleScript update command: %@", [installerError objectForKey:@"NSAppleScriptErrorMessage"]);
+		NSError *error = [NSError errorWithDomain:SUSparkleErrorDomain code:SUInstallationError userInfo:[NSDictionary dictionaryWithObject:SULocalizedString(@"An error occurred while installing the update. Please try again later.", nil) forKey:NSLocalizedDescriptionKey]];
+		[self finishInstallationToPath:[info objectForKey:SUSilentPackageInstallerInstallationPathKey] withResult:NO host:[info objectForKey:SUSilentPackageInstallerHostKey] error:error delegate:[info objectForKey:SUSilentPackageInstallerDelegateKey]];
 	}
 
 	[pool drain];
